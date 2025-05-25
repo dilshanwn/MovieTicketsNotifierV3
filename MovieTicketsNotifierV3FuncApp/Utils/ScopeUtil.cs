@@ -12,13 +12,38 @@ namespace MovieTicketsNotifierV3FuncApp.Utils
 {
     public static class ScopeUtil
     {
-        public static async Task<List<string>> FindMovieIDsByName(string[] MovieNames, string AccessToken, IConfiguration config)
+        public static async Task<List<string>> FindMovieIDsByName(string[] MovieNames, string AccessToken, IConfiguration config, Services.SupabaseService supabaseService = null)
         {
             List<string> MovieIDs = new List<string>();
+            if (MovieNames == null || MovieNames.Length == 0)
+            {
+                return MovieIDs;
+            }
+
+            // Use caching if SupabaseService is provided
+            List<MovieIdNames> MovieIds;
+            if (supabaseService != null)
+            {
+                // Use a cache key based on the access token
+                string cacheKey = $"movieIds_{AccessToken}";
+                
+                // Try to get from cache first
+                MovieIds = supabaseService.GetCachedMovieIds(cacheKey);
+                
+                if (MovieIds == null)
+                {
+                    // If not in cache, fetch and then cache
+                    MovieIds = await GetAllMovieIds(AccessToken, config);
+                    supabaseService.CacheMovieIds(cacheKey, MovieIds);
+                }
+            }
+            else
+            {
+                MovieIds = await GetAllMovieIds(AccessToken, config);
+            }
+
             foreach (var movie in MovieNames)
             {
-                List<MovieIdNames> MovieIds = await GetAllMovieIds(AccessToken, config);
-
                 foreach (var movieId in MovieIds)
                 {
                     if (movieId.MovieName.ToLower().Contains(movie.ToLower()))

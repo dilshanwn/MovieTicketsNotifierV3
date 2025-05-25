@@ -11,7 +11,7 @@ namespace MovieTicketsNotifierV3FuncApp.Utils
 {
     public static class SmtpUtil
     {
-        public static async Task<bool> SendEmail(IConfiguration configuration, MovieShowTimeMatchFoundResponse Movie)
+        public static async Task<bool> SendEmail(IConfiguration configuration, MovieShowTimeMatchFoundResponse Movie, string emailRecipient = null)
         {
 
             bool sendEmail = false;
@@ -19,7 +19,7 @@ namespace MovieTicketsNotifierV3FuncApp.Utils
             {
                 var EmailUserName = configuration["EmailUserName"];
                 var EmailPassword = configuration["EmailPassword"];
-                var EmailRecipient = configuration["EmailRecipient"];
+                var EmailRecipient = emailRecipient ?? configuration["EmailRecipient"];
 
                 var subject = $"{Movie?.Theater?.MovieName?.ToUpper()} - {Movie?.Experience?.ExperienceName} Tickets Released";
                 var body = $"<h1>{subject}</h1><br><br>";

@@ -103,6 +103,9 @@ namespace MovieTicketsNotifierV3FuncApp.Utils
             return MovieIds;
         }
 
+        /// <summary>
+        /// Find screenings for multiple movie IDs, dates, and experiences
+        /// </summary>
         public static async Task<List<MovieShowTimeMatchFoundResponse>> FindFirstScreeningDetails(string[] MovieIds, string[] MovieDates, string[] ExpectedExperiances, string AccessToken, IConfiguration config)
         {
             List<MovieShowTimeMatchFoundResponse> ListOfResponse = new List<MovieShowTimeMatchFoundResponse>();
@@ -123,6 +126,9 @@ namespace MovieTicketsNotifierV3FuncApp.Utils
             return ListOfResponse;
         }
 
+        /// <summary>
+        /// Find screening details for a single movie ID, date, and experience type
+        /// </summary>
         public static async Task<List<MovieShowTimeMatchFoundResponse>> FindFirstScreeningDetails(string MovieId, string MovieDate, string ExpectedExperiance, string AccessToken, IConfiguration config)
         {
             List<MovieShowTimeMatchFoundResponse> ListOfResponse = new List<MovieShowTimeMatchFoundResponse>();

@@ -18,12 +18,14 @@ namespace MovieTicketsNotifierV3FuncApp
         private readonly ILogger<TestFunction> _logger;
         private readonly IConfiguration _configuration;
         private readonly SupabaseService _supabaseService;
+        private readonly Dictionary<string, List<MovieShowTimeMatchFoundResponse>> _screeningCache;
 
         public TestFunction(ILogger<TestFunction> logger, IConfiguration configuration, SupabaseService supabaseService)
         {
             _logger = logger;
             _configuration = configuration;
             _supabaseService = supabaseService;
+            _screeningCache = new Dictionary<string, List<MovieShowTimeMatchFoundResponse>>();
         }
 
         [Function("TestFunction")]
@@ -47,86 +49,68 @@ namespace MovieTicketsNotifierV3FuncApp
             // Track all found screenings for the response
             List<MovieShowTimeMatchFoundResponse> allMovieShowTimeMatches = new List<MovieShowTimeMatchFoundResponse>();
             
-            // Process alerts by name individually, similar to ScheduledScopeChecker
-            foreach (var alert in alertsByName)
+            try
             {
-                try
+                // Create a combined list of alerts with movie IDs
+                var allAlertsList = await AlertProcessingUtil.CombineAlerts(
+                    alertsByName, 
+                    alertsById, 
+                    AccessToken, 
+                    _configuration, 
+                    _supabaseService,
+                    _logger);
+                
+                // Create a dictionary to track unique screenings that have been processed
+                Dictionary<string, bool> processedScreenings = new Dictionary<string, bool>();
+                
+                // Process all alerts in the combined list
+                foreach (var alert in allAlertsList)
                 {
-                    // Convert movie name to array
-                    string[] movieNames = new string[] { alert.MovieName };
-                    
-                    // Find movie IDs for the movie name
-                    var movieIds = await ScopeUtil.FindMovieIDsByName(movieNames, AccessToken, _configuration, _supabaseService);
-                    
-                    if (movieIds != null && movieIds.Any())
+                    try
                     {
-                        // Convert date to string array for API
-                        string[] movieDates = new string[] { alert.Date.ToString("yyyy-MM-dd") };
-                        
-                        // Check for screenings with this alert's specific criteria
-                        var matches = await ScopeUtil.FindFirstScreeningDetails(
-                            movieIds.ToArray(),
-                            movieDates,
-                            alert.Experiance,
-                            AccessToken,
-                            _configuration);
-                        
-                        if (matches != null && matches.Any())
+                        // Check each experience type for the alert
+                        foreach (var experience in alert.Experiance)
                         {
-                            // Filter by location if needed
-                            var locationMatches = matches.Where(m => m.Theater.VistaCode.Contains(alert.Location)).ToList();
-                            allMovieShowTimeMatches.AddRange(locationMatches);
+                            // Create a unique key for this screening
+                            string screeningKey = AlertProcessingUtil.CreateScreeningKey(
+                                alert.MovieId, 
+                                alert.Location, 
+                                alert.Date.ToString("yyyy-MM-dd"), 
+                                experience);
                             
-                            // For demonstration purposes, send an email
-                            foreach (var match in locationMatches)
+                            // Only process this screening if we haven't seen it before
+                            if (!processedScreenings.ContainsKey(screeningKey))
                             {
-                                await SmtpUtil.SendEmail(_configuration, match, alert.Email);
+                                processedScreenings[screeningKey] = true;
+                                
+                                // Get or fetch screening details
+                                var screeningMatches = await GetScreeningDetails(
+                                    alert.MovieId,
+                                    alert.Date.ToString("yyyy-MM-dd"),
+                                    experience,
+                                    AccessToken,
+                                    alert.Location);
+                                
+                                // Add to all matches
+                                allMovieShowTimeMatches.AddRange(screeningMatches);
+                                
+                                // For demonstration purposes, send an email
+                                foreach (var match in screeningMatches)
+                                {
+                                    await SmtpUtil.SendEmail(_configuration, match, alert.Email);
+                                }
                             }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Error processing alert by name: {ex.Message}");
-                }
-            }
-            
-            // Process alerts by ID individually, similar to ScheduledScopeChecker
-            foreach (var alert in alertsById)
-            {
-                try
-                {
-                    // Movie ID is already provided
-                    string[] movieIds = new string[] { alert.MovieId };
-                    
-                    // Convert date to string array for API
-                    string[] movieDates = new string[] { alert.Date.ToString("yyyy-MM-dd") };
-                    
-                    // Check for screenings with this alert's specific criteria
-                    var matches = await ScopeUtil.FindFirstScreeningDetails(
-                        movieIds,
-                        movieDates,
-                        alert.Experiance,
-                        AccessToken,
-                        _configuration);
-                    
-                    if (matches != null && matches.Any())
+                    catch (Exception ex)
                     {
-                        // Filter by location if needed
-                        var locationMatches = matches.Where(m => m.Theater.VistaCode.Contains(alert.Location)).ToList();
-                        allMovieShowTimeMatches.AddRange(locationMatches);
-                        
-                        // For demonstration purposes, send an email
-                        foreach (var match in locationMatches)
-                        {
-                            await SmtpUtil.SendEmail(_configuration, match, alert.Email);
-                        }
+                        _logger.LogError($"Error processing alert: {ex.Message}");
                     }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Error processing alert by id: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in alert processing: {ex.Message}");
             }
 
             // Get all movies name list from matches
@@ -140,7 +124,13 @@ namespace MovieTicketsNotifierV3FuncApp
                 AlertsData = new
                 {
                     AlertsByName = alertsByName,
-                    AlertsById = alertsById
+                    AlertsById = alertsById,
+                    CombinedAlerts = await AlertProcessingUtil.CombineAlerts(
+                        alertsByName, 
+                        alertsById, 
+                        AccessToken, 
+                        _configuration, 
+                        _supabaseService)
                 },
                 Matches = new
                 {
@@ -150,6 +140,47 @@ namespace MovieTicketsNotifierV3FuncApp
             };
             
             return new OkObjectResult(JsonSerializer.Serialize(data));
+        }
+        
+        private async Task<List<MovieShowTimeMatchFoundResponse>> GetScreeningDetails(
+            string movieId,
+            string movieDate,
+            string experienceType,
+            string accessToken,
+            string location)
+        {
+            // Create a cache key based on the input parameters
+            string cacheKey = AlertProcessingUtil.CreateScreeningKey(
+                movieId, 
+                location, 
+                movieDate, 
+                experienceType);
+            
+            List<MovieShowTimeMatchFoundResponse> screeningResponses;
+            
+            // Check if we have cached results
+            if (_screeningCache.ContainsKey(cacheKey))
+            {
+                screeningResponses = _screeningCache[cacheKey];
+            }
+            else
+            {
+                // Get screening details from API for this specific combination
+                screeningResponses = await ScopeUtil.FindFirstScreeningDetails(
+                    movieId,
+                    movieDate,
+                    experienceType,
+                    accessToken,
+                    _configuration);
+                
+                // Cache the results
+                _screeningCache[cacheKey] = screeningResponses;
+            }
+
+            // Filter screenings by location
+            return screeningResponses
+                .Where(r => r.Theater.VistaCode.Contains(location))
+                .ToList();
         }
     }
 }

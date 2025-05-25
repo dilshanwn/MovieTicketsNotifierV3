@@ -44,97 +44,99 @@ namespace MovieTicketsNotifierV3FuncApp
             var alertsByName = await _supabaseService.GetActiveAlertsByName();
             var alertsById = await _supabaseService.GetActiveAlertsById();
 
-            // Collect all movie IDs and names for checking
-            List<string> allMovieIds = new List<string>();
-            List<string> allMovieNames = new List<string>();
-            List<string> allDates = new List<string>();
-            List<string> allExperiences = new List<string>();
+            // Track all found screenings for the response
+            List<MovieShowTimeMatchFoundResponse> allMovieShowTimeMatches = new List<MovieShowTimeMatchFoundResponse>();
             
-            // Process alerts by name
+            // Process alerts by name individually, similar to ScheduledScopeChecker
             foreach (var alert in alertsByName)
             {
-                allMovieNames.Add(alert.MovieName);
-                
-                // Add single date
-                allDates.Add(alert.Date.ToString("yyyy-MM-dd"));
-                
-                allExperiences.AddRange(alert.Experiance);
+                try
+                {
+                    // Convert movie name to array
+                    string[] movieNames = new string[] { alert.MovieName };
+                    
+                    // Find movie IDs for the movie name
+                    var movieIds = await ScopeUtil.FindMovieIDsByName(movieNames, AccessToken, _configuration, _supabaseService);
+                    
+                    if (movieIds != null && movieIds.Any())
+                    {
+                        // Convert date to string array for API
+                        string[] movieDates = new string[] { alert.Date.ToString("yyyy-MM-dd") };
+                        
+                        // Check for screenings with this alert's specific criteria
+                        var matches = await ScopeUtil.FindFirstScreeningDetails(
+                            movieIds.ToArray(),
+                            movieDates,
+                            alert.Experiance,
+                            AccessToken,
+                            _configuration);
+                        
+                        if (matches != null && matches.Any())
+                        {
+                            // Filter by location if needed
+                            var locationMatches = matches.Where(m => m.Theater.VistaCode.Contains(alert.Location)).ToList();
+                            allMovieShowTimeMatches.AddRange(locationMatches);
+                            
+                            // For demonstration purposes, send an email
+                            foreach (var match in locationMatches)
+                            {
+                                await SmtpUtil.SendEmail(_configuration, match, alert.Email);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error processing alert by name: {ex.Message}");
+                }
             }
             
-            // Process alerts by ID
+            // Process alerts by ID individually, similar to ScheduledScopeChecker
             foreach (var alert in alertsById)
             {
-                allMovieIds.Add(alert.MovieId);
-                
-                // Add single date
-                allDates.Add(alert.Date.ToString("yyyy-MM-dd"));
-                
-                allExperiences.AddRange(alert.Experiance);
-            }
-
-            // Remove duplicates
-            allMovieIds = allMovieIds.Distinct().ToList();
-            allMovieNames = allMovieNames.Distinct().ToList();
-            allDates = allDates.Distinct().ToList();
-            allExperiences = allExperiences.Distinct().ToList();
-
-            try
-            {
-                // Find movie IDs from names
-                var movieIdsFromNames = await ScopeUtil.FindMovieIDsByName(
-                    allMovieNames.ToArray(), 
-                    AccessToken, 
-                    _configuration,
-                    _supabaseService);
-                
-                // Combine with direct IDs
-                allMovieIds.AddRange(movieIdsFromNames);
-                allMovieIds = allMovieIds.Distinct().ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error finding movie IDs: {ex.Message}");
-            }
-
-            // If we have no movie IDs, return early
-            if (!allMovieIds.Any())
-            {
-                return new OkObjectResult("No valid movie IDs found");
-            }
-
-            // Check for screenings
-            var movieShowTimeMatchFoundResponseList = await ScopeUtil.FindFirstScreeningDetails(
-                allMovieIds.ToArray(), 
-                allDates.ToArray(), 
-                allExperiences.ToArray(), 
-                AccessToken, 
-                _configuration);
-
-            // For demonstration purposes, send an email to the default recipient
-            foreach (var movieShowTimeMatchFoundResponse in movieShowTimeMatchFoundResponseList)
-            {
-                var sentEmail = await SmtpUtil.SendEmail(_configuration, movieShowTimeMatchFoundResponse);
-                if (!sentEmail)
+                try
                 {
-                    return new BadRequestResult();
+                    // Movie ID is already provided
+                    string[] movieIds = new string[] { alert.MovieId };
+                    
+                    // Convert date to string array for API
+                    string[] movieDates = new string[] { alert.Date.ToString("yyyy-MM-dd") };
+                    
+                    // Check for screenings with this alert's specific criteria
+                    var matches = await ScopeUtil.FindFirstScreeningDetails(
+                        movieIds,
+                        movieDates,
+                        alert.Experiance,
+                        AccessToken,
+                        _configuration);
+                    
+                    if (matches != null && matches.Any())
+                    {
+                        // Filter by location if needed
+                        var locationMatches = matches.Where(m => m.Theater.VistaCode.Contains(alert.Location)).ToList();
+                        allMovieShowTimeMatches.AddRange(locationMatches);
+                        
+                        // For demonstration purposes, send an email
+                        foreach (var match in locationMatches)
+                        {
+                            await SmtpUtil.SendEmail(_configuration, match, alert.Email);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error processing alert by id: {ex.Message}");
                 }
             }
 
             // Get all movies name list from matches
-            var movieNameList = movieShowTimeMatchFoundResponseList
+            var movieNameList = allMovieShowTimeMatches
                 .Select(x => x.Theater.MovieName)
                 .Distinct()
                 .ToList();
 
             var data = new
             {
-                ScheduledData = new
-                {
-                    MoviesScheduledByName = allMovieNames,
-                    AllScheduledMovieIds = allMovieIds,
-                    AllScheduledMovieDates = allDates,
-                    AllScheduledExperiences = allExperiences
-                },
                 AlertsData = new
                 {
                     AlertsByName = alertsByName,
@@ -143,7 +145,7 @@ namespace MovieTicketsNotifierV3FuncApp
                 Matches = new
                 {
                     FoundMovieNames = movieNameList,
-                    movieShowTimeMatchFoundResponseList = movieShowTimeMatchFoundResponseList ?? new List<MovieShowTimeMatchFoundResponse>()
+                    movieShowTimeMatchFoundResponseList = allMovieShowTimeMatches
                 }
             };
             

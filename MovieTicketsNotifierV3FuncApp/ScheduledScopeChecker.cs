@@ -2,6 +2,9 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MovieTicketsNotifierV3FuncApp.Utils;
+using MovieTicketsNotifierV3FuncApp.Models;
+using MovieTicketsNotifierV3FuncApp.Responses;
+using MovieTicketsNotifierV3FuncApp.Services;
 using System;
 
 namespace MovieTicketsNotifierV3FuncApp

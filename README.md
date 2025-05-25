@@ -1,11 +1,20 @@
 # MovieTicketsNotifierV3
-This project is for a ticket notifier app for a movie theater.
+
+This project is for a ticket notifier app for [Scope Cinemas](http://scopecinemas.com/).
+
+- Users can register for notifications when tickets go live for movies they select. 
+- Can specify which 
+  - date
+  - location(HCM, CCC, etc)
+  - which experiances to notify (IMAX, ATMOS, etc.).
+
+- A scheduled task (azure function app) will check every 15min and send out emails so you'd never miss the good seats :)
 
 ## Project Structure
 
 - MovieTicketsNotifierV3FuncApp - contains the Azure fucntions backend code
 - db - contains the code for setting up the supabase db
-- app (TODO)- contains the android app that uses the function app as the backend
+- app (TODO)- contains frontend app to register for notifications
 
 ## Setting up Supabase
 
@@ -15,9 +24,9 @@ This project is for a ticket notifier app for a movie theater.
 4. Update your `local.settings.json` file with the following keys:
    ```json
    {
-     "Values": {
-       "Supabase:Url": "https://your-project-id.supabase.co",
-       "Supabase:Key": "your-supabase-anon-key"
+     "Supabase": {
+       "Url": "https://your-project-id.supabase.co",
+       "Key": "your-supabase-anon-key"
      }
    }
    ```
@@ -30,3 +39,9 @@ The application uses two main tables in Supabase:
 2. `registered_alerts_by_id` - Stores alerts for specific movie IDs
 
 See the full database schema in `db/supabase/Database.sql`
+
+## Scope API credentials
+
+This is not a offcial integration. 
+
+_But a curious developer might find decompiling the official android app is full of insights._

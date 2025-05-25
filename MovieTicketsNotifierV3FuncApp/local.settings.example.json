@@ -2,15 +2,20 @@
   "IsEncrypted": false,
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "ExperianceTypes": "IMAX,GOLD",
-    "MovieIds": "123,456",
-    "MovieNames": "Avatar,The Matrix",
-    "MovieDates": "2023-09-01,2023-09-02",
-    "EmailUserName": "example@example.com",
-    "EmailPassword": "your_email_password",
-    "EmailRecipient": "recipient@example.com",
-    "Supabase:Url": "https://your-project-id.supabase.co",
-    "Supabase:Key": "your-supabase-anon-key"
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated"
+  },
+  "EmailUserName": "<email_address_for_sending_alerts>",
+  "EmailPassword": "<email_password>",
+  "ScopeBaseUrl": "https://ce763738-6aa1-420a-9a5c-ab75cd2b01a5-prod.e1-us-east-azure.choreoapis.dev/xbsc/archmage/scopeapi/v1",
+  "ScopeMovieShowTimesUrl": "getMovieShowTimes",
+  "ScopeNowShowingMoviesUrl": "getNowShowingMovies",
+  "ScopeUpComingMoviesUrl": "getUpComingMovies",
+  "ScopeUserKey": "<scope_user_key>",
+  "ScopeClientId": "<scope_client_id>",
+  "ScopeClientSecret": "<scope_client_secret>",
+  "ScopeTokenUrl": "https://api.asgardeo.io/t/archmage/oauth2/token",
+  "Supabase": {
+    "Url": "<supabase_api_url>",
+    "Key": "<supabase_service_role_key>"
   }
 }

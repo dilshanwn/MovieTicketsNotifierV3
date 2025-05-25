@@ -50,15 +50,16 @@ SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
 
+
 CREATE TABLE IF NOT EXISTS "public"."registered_alerts_by_id" (
     "id" bigint NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "active" boolean,
+    "active" boolean DEFAULT true NOT NULL,
     "email" "text" NOT NULL,
     "movie_id" "text" NOT NULL,
-    "date" timestamp without time zone[] NOT NULL,
     "location" "public"."locations" NOT NULL,
-    "experiance" "public"."experiance_types"[] NOT NULL
+    "experiance" "public"."experiance_types"[] NOT NULL,
+    "date" "date" NOT NULL
 );
 
 
@@ -74,15 +75,16 @@ ALTER TABLE "public"."registered_alerts_by_id" ALTER COLUMN "id" ADD GENERATED B
     CACHE 1
 );
 
+
 CREATE TABLE IF NOT EXISTS "public"."registered_alerts_by_name" (
     "id" bigint NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "active" boolean,
+    "active" boolean DEFAULT true NOT NULL,
     "email" "text" NOT NULL,
     "movie_name" "text" NOT NULL,
-    "date" timestamp without time zone[] NOT NULL,
-    "location" "public"."locations"[] NOT NULL,
-    "experiance" "public"."experiance_types"[] NOT NULL
+    "location" "public"."locations" NOT NULL,
+    "experiance" "public"."experiance_types"[] NOT NULL,
+    "date" "date" NOT NULL
 );
 
 

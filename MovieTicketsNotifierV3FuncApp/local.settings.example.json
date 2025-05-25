@@ -1,0 +1,16 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "ExperianceTypes": "IMAX,GOLD",
+    "MovieIds": "123,456",
+    "MovieNames": "Avatar,The Matrix",
+    "MovieDates": "2023-09-01,2023-09-02",
+    "EmailUserName": "example@example.com",
+    "EmailPassword": "your_email_password",
+    "EmailRecipient": "recipient@example.com",
+    "Supabase:Url": "https://your-project-id.supabase.co",
+    "Supabase:Key": "your-supabase-anon-key"
+  }
+}

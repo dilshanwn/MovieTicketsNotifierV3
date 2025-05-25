@@ -55,10 +55,8 @@ namespace MovieTicketsNotifierV3FuncApp
             {
                 allMovieNames.Add(alert.MovieName);
                 
-                foreach (var date in alert.Date)
-                {
-                    allDates.Add(date.ToString("yyyy-MM-dd"));
-                }
+                // Add single date
+                allDates.Add(alert.Date.ToString("yyyy-MM-dd"));
                 
                 allExperiences.AddRange(alert.Experiance);
             }
@@ -68,10 +66,8 @@ namespace MovieTicketsNotifierV3FuncApp
             {
                 allMovieIds.Add(alert.MovieId);
                 
-                foreach (var date in alert.Date)
-                {
-                    allDates.Add(date.ToString("yyyy-MM-dd"));
-                }
+                // Add single date
+                allDates.Add(alert.Date.ToString("yyyy-MM-dd"));
                 
                 allExperiences.AddRange(alert.Experiance);
             }

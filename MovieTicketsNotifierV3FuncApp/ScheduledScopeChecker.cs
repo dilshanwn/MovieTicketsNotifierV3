@@ -59,8 +59,8 @@ namespace MovieTicketsNotifierV3FuncApp
                         
                         if (movieIds != null && movieIds.Any())
                         {
-                            // Convert dates to string array for API
-                            string[] movieDates = alert.Date.Select(d => d.ToString("yyyy-MM-dd")).ToArray();
+                            // Convert date to string array for API
+                            string[] movieDates = new string[] { alert.Date.ToString("yyyy-MM-dd") };
                             
                             // Process screenings for this alert
                             await ProcessScreeningsAndSendEmails(
@@ -69,7 +69,7 @@ namespace MovieTicketsNotifierV3FuncApp
                                 alert.Experiance, 
                                 AccessToken, 
                                 alert.Email,
-                                alert.Location
+                                new string[] { alert.Location }
                             );
                         }
                     }
@@ -92,8 +92,8 @@ namespace MovieTicketsNotifierV3FuncApp
                         // Movie ID is already provided
                         string[] movieIds = new string[] { alert.MovieId };
                         
-                        // Convert dates to string array for API
-                        string[] movieDates = alert.Date.Select(d => d.ToString("yyyy-MM-dd")).ToArray();
+                        // Convert date to string array for API
+                        string[] movieDates = new string[] { alert.Date.ToString("yyyy-MM-dd") };
                         
                         // Process screenings for this alert
                         await ProcessScreeningsAndSendEmails(

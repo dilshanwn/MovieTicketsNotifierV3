@@ -4,30 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace MovieTicketsNotifierV3FuncApp.Models
 {
-    public class RegisteredAlertByName
+    public class RegisteredAlertByName : MovieAlertBaseModel
     {
-        [JsonPropertyName("id")]
-        public long Id { get; set; }
-
-        [JsonPropertyName("created_at")]
-        public DateTime CreatedAt { get; set; }
-
-        [JsonPropertyName("active")]
-        public bool Active { get; set; }
-
-        [JsonPropertyName("email")]
-        public string Email { get; set; }
-
         [JsonPropertyName("movie_name")]
         public string MovieName { get; set; }
-
-        [JsonPropertyName("date")]
-        public DateTime[] Date { get; set; }
-
-        [JsonPropertyName("location")]
-        public string[] Location { get; set; }
-
-        [JsonPropertyName("experiance")]
-        public string[] Experiance { get; set; }
     }
 }

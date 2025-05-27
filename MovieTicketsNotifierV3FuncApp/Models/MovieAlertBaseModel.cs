@@ -8,7 +8,9 @@ namespace MovieTicketsNotifierV3FuncApp.Models
     public class MovieAlertBaseModel : BaseModel
     {
         [JsonPropertyName("id")]
+        [JsonIgnore]
         [Column("id")]
+        [PrimaryKey]
         public long Id { get; set; }
 
         [JsonPropertyName("created_at")]

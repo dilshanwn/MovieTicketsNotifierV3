@@ -113,33 +113,8 @@ namespace MovieTicketsNotifierV3FuncApp
                 _logger.LogError($"Error in alert processing: {ex.Message}");
             }
 
-            // Get all movies name list from matches
-            var movieNameList = allMovieShowTimeMatches
-                .Select(x => x.Theater.MovieName)
-                .Distinct()
-                .ToList();
-
-            var data = new
-            {
-                AlertsData = new
-                {
-                    AlertsByName = alertsByName,
-                    AlertsById = alertsById,
-                    CombinedAlerts = await AlertProcessingUtil.CombineAlerts(
-                        alertsByName, 
-                        alertsById, 
-                        AccessToken, 
-                        _configuration, 
-                        _supabaseService)
-                },
-                Matches = new
-                {
-                    FoundMovieNames = movieNameList,
-                    movieShowTimeMatchFoundResponseList = allMovieShowTimeMatches
-                }
-            };
-            
-            return new OkObjectResult(JsonSerializer.Serialize(data));
+       
+            return new OkObjectResult("ok");
         }
         
         private async Task<List<MovieShowTimeMatchFoundResponse>> GetScreeningDetails(
